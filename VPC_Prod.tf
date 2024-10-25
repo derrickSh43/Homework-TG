@@ -1,10 +1,10 @@
-//1. creat the vpc
+//1. create the vpc
 resource "aws_vpc" "prod_vpc" {
   cidr_block           = "10.231.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
-    Name = "Custom VPC"
+    Name = "Prod VPC"
   }
 }
 
@@ -53,18 +53,17 @@ resource "aws_route_table" "custom_route_table_public_subnetProd" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.pinternet_gatewayProd.id
   }
-  route {
-    cidr_block         = "10.230.0.0/16"
+    route {
+    cidr_block         = "10.0.0.0/8"
     transit_gateway_id = aws_ec2_transit_gateway.example.id
   }
-
-
 
   tags = {
     Name = "Route Table for Public Subnet",
   }
 
 }
+
 
 //5. Association between RT and IG
 resource "aws_route_table_association" "public_subnetProd_associationProd" {
@@ -80,7 +79,6 @@ resource "aws_route_table_association" "public_subnetProd_associationProd" {
 //8. RT for private Subnet
 resource "aws_route_table" "custom_route_table_private_subnetProd" {
   vpc_id = aws_vpc.prod_vpc.id
-
 
 
 
@@ -104,6 +102,34 @@ resource "aws_instance" "windows_instance" {
   instance_type   = "t2.medium"
   security_groups = [aws_security_group.ec2_sgW.id]
   subnet_id       = aws_subnet.public_subnetProd[0].id
-
+  associate_public_ip_address = true
+  key_name      = "win"
+ 
 
 }
+variable "win-pair" {
+  description = "Value of AWS SSH key-pair name"
+  type        = string
+  default     = "win"
+}
+resource "tls_private_key" "win" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+resource "aws_key_pair" "win-pair" {
+  key_name = "win"
+ public_key = tls_private_key.win.public_key_openssh
+}
+output "instance_public_key" {
+  description = "Public key of oe-key-pair"
+  value       = tls_private_key.win.public_key_openssh
+  sensitive   = true
+}
+output "instance_private_key" {
+  description = "Private key of oe-key-pair"
+  value       =  tls_private_key.win.private_key_pem
+  sensitive   = true
+}
+// use the following command to generate the keys
+//terraform output -raw instnacce_private_key
+//terraform output -raw instnacce_public_key

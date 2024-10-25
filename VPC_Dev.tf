@@ -4,7 +4,7 @@ resource "aws_vpc" "dev_vpc" {
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
-    Name = "Custom VPC"
+    Name = "Dev VPC"
   }
 }
 
@@ -45,10 +45,10 @@ resource "aws_route_table" "custom_route_table_private_subnet" {
 
   vpc_id = aws_vpc.dev_vpc.id
   route {
-    cidr_block         = "10.231.0.0/16"
+    cidr_block         = "10.0.0.0/8"
     transit_gateway_id = aws_ec2_transit_gateway.example.id
   }
-
+ 
 
   tags = {
     Name = "Route Table for Private Subnet",
@@ -71,6 +71,7 @@ resource "aws_instance" "Linux_instance" {
   instance_type   = "t2.micro"
   security_groups = [aws_security_group.ec2_sg.id]
   subnet_id       = aws_subnet.private_subnet[0].id
+  
 
 
 }
